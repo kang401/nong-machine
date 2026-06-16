@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>농기계 보유·임대 경제성 분석</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paddy:#2f5d3a;          /* 벼 잎 딥그린 */
+    --paddy-deep:#1d3d26;     /* 더 깊은 그린 */
+    --soil:#6b4f33;           /* 논흙 갈색 */
+    --rice:#d9b25a;           /* 누런 벼 */
+    --rice-soft:#e9d39a;
+    --paper:#f6f3ea;          /* 한지 바탕 */
+    --paper-deep:#ece6d6;
+    --ink:#23291f;            /* 먹색 본문 */
+    --ink-soft:#5b5f50;
+    --rent:#c47a3d;           /* 임대(흙·주황) */
+    --own:#3c6e4f;            /* 보유(논초록) */
+    --new:#8a6fae;            /* 신규구매(보라) */
+    --danger:#b4452f;
+    --line:#d8d0bd;
+    --shadow:0 1px 0 rgba(35,41,31,.04), 0 8px 30px -18px rgba(35,41,31,.35);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans KR",sans-serif; font-weight:400;
+    line-height:1.65; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- Hero ---------- */
+  header.hero{
+    background:
+      radial-gradient(120% 80% at 80% -10%, rgba(217,178,90,.18), transparent 60%),
+      linear-gradient(165deg, var(--paddy) 0%, var(--paddy-deep) 100%);
+    color:var(--paper); padding:64px 0 88px; position:relative; overflow:hidden;
+  }
+  header.hero::after{
+    /* 논두렁 결 같은 가는 줄무늬 */
+    content:""; position:absolute; inset:0; opacity:.10; pointer-events:none;
+    background-image:repeating-linear-gradient(78deg, transparent 0 26px, rgba(255,255,255,.6) 26px 27px);
+  }
+  .hero .wrap{position:relative; z-index:1;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.32em;
+    text-transform:uppercase; color:var(--rice-soft); margin:0 0 18px;
+  }
+  .hero h1{
+    font-family:"Gowun Batang",serif; font-weight:700;
+    font-size:clamp(34px,5.6vw,60px); line-height:1.12; margin:0 0 18px;
+    letter-spacing:-.01em;
+  }
+  .hero h1 em{ font-style:normal; color:var(--rice); }
+  .hero p.lead{
+    max-width:560px; font-size:17px; color:#e8efe4; margin:0;
+  }
+  .hero .scroll-hint{
+    margin-top:40px; font-family:"IBM Plex Mono",monospace; font-size:12.5px;
+    letter-spacing:.12em; color:var(--rice-soft);
+  }
+
+  /* ---------- Section frame ---------- */
+  section{ padding:56px 0; border-bottom:1px solid var(--line); }
+  .sec-head{ display:flex; align-items:baseline; gap:16px; margin-bottom:30px; }
+  .sec-num{
+    font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600;
+    color:var(--rent); letter-spacing:.1em; padding-top:6px;
+  }
+  .sec-head h2{
+    font-family:"Gowun Batang",serif; font-weight:700;
+    font-size:clamp(22px,3vw,30px); margin:0; letter-spacing:-.01em;
+  }
+  .sec-head .sub{ color:var(--ink-soft); font-size:14.5px; margin:4px 0 0; }
+
+  /* ---------- Input card ---------- */
+  .panel{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:26px; box-shadow:var(--shadow);
+  }
+  .field{ margin-bottom:22px; }
+  .field > label{
+    display:block; font-weight:600; font-size:14.5px; margin-bottom:8px;
+  }
+  .field .hint{ color:var(--ink-soft); font-weight:400; font-size:12.5px; }
+  input[type=number]{
+    width:100%; padding:12px 14px; font-size:15px; font-family:"IBM Plex Mono",monospace;
+    border:1px solid var(--line); border-radius:9px; background:var(--paper);
+    color:var(--ink); transition:border-color .15s, box-shadow .15s;
+  }
+  input[type=number]:focus{
+    outline:none; border-color:var(--paddy);
+    box-shadow:0 0 0 3px rgba(47,93,58,.14);
+  }
+  .machines{ display:grid; gap:16px; grid-template-columns:repeat(3,1fr); margin-top:8px; }
+  @media(max-width:760px){ .machines{ grid-template-columns:1fr; } }
+  .mcard{
+    border:1px solid var(--line); border-radius:12px; padding:16px;
+    background:var(--paper); transition:border-color .2s, background .2s;
+  }
+  .mcard.on{ border-color:var(--paddy); background:#fff; }
+  .mcard h4{ margin:0 0 4px; font-size:16px; font-family:"Gowun Batang",serif; }
+  .mcard .toggle{
+    display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;
+    color:var(--ink-soft); user-select:none; margin-bottom:2px;
+  }
+  .mcard .toggle input{ width:16px; height:16px; accent-color:var(--paddy); }
+  .mcard .body{ overflow:hidden; transition:max-height .3s ease, opacity .25s, margin .3s; }
+  .mcard .body.hide{ max-height:0; opacity:0; margin-top:0; }
+  .mcard .body.show{ max-height:340px; opacity:1; margin-top:12px; }
+  .mini{ margin-bottom:11px; }
+  .mini label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
+  .mini input{ padding:8px 10px; font-size:13px; }
+  .checkrow{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); margin-top:4px;}
+  .checkrow input{ width:15px; height:15px; accent-color:var(--danger); }
+
+  /* survey */
+  .survey{ margin-top:8px; }
+  .q{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    padding:11px 0; border-bottom:1px dashed var(--line); font-size:14px;
+  }
+  .q:last-child{ border-bottom:none; }
+  .q .qtext{ color:var(--ink); }
+  .yn{ display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; flex:none; }
+  .yn button{
+    border:none; background:#fff; color:var(--ink-soft); font-size:12.5px;
+    padding:6px 14px; cursor:pointer; font-family:inherit; transition:background .15s,color .15s;
+  }
+  .yn button.sel-y{ background:var(--paddy); color:#fff; }
+  .yn button.sel-n{ background:var(--soil); color:#fff; }
+
+  .runbar{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  .btn{
+    font-family:inherit; font-weight:600; font-size:15px; cursor:pointer;
+    border:none; border-radius:10px; padding:14px 26px; transition:transform .08s, box-shadow .2s, background .2s;
+  }
+  .btn-go{ background:var(--paddy); color:#fff; box-shadow:0 8px 22px -10px rgba(47,93,58,.7); }
+  .btn-go:hover{ background:var(--paddy-deep); }
+  .btn:active{ transform:translateY(1px); }
+  .score-pill{
+    font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-deep); padding:8px 14px; border-radius:999px;
+  }
+
+  /* ---------- Results ---------- */
+  #results{ display:none; }
+  #results.show{ display:block; animation:rise .5s ease both; }
+  @keyframes rise{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;} }
+
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media(max-width:760px){ .kpis{ grid-template-columns:repeat(2,1fr); } }
+  .kpi{
+    background:#fff; border:1px solid var(--line); border-radius:13px; padding:20px;
+    box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .kpi .cap{ font-size:12.5px; color:var(--ink-soft); margin:0 0 8px; letter-spacing:.02em; }
+  .kpi .val{ font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:24px; letter-spacing:-.02em; }
+  .kpi .val small{ font-size:14px; font-weight:400; color:var(--ink-soft); }
+  .kpi.accent{ background:linear-gradient(160deg,var(--paddy),var(--paddy-deep)); border-color:transparent; color:#fff; }
+  .kpi.accent .cap{ color:var(--rice-soft); }
+  .kpi.accent .val small{ color:var(--rice-soft); }
+  .tag{ display:inline-block; font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:999px; margin-top:10px; }
+  .tag.good{ background:rgba(60,110,79,.16); color:var(--own); }
+  .tag.warn{ background:rgba(196,122,61,.18); color:var(--rent); }
+  .tag.bad{ background:rgba(180,69,47,.15); color:var(--danger); }
+  .kpi.accent .tag.good{ background:rgba(255,255,255,.18); color:#fff; }
+  .kpi.accent .tag.warn{ background:rgba(233,211,154,.25); color:#fff; }
+
+  /* charts */
+  .chart-grid{ display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:8px; }
+  @media(max-width:760px){ .chart-grid{ grid-template-columns:1fr; } }
+  .chart-card{ background:#fff; border:1px solid var(--line); border-radius:13px; padding:22px; box-shadow:var(--shadow); }
+  .chart-card h3{ margin:0 0 4px; font-size:15.5px; font-family:"Gowun Batang",serif; }
+  .chart-card .csub{ font-size:12.5px; color:var(--ink-soft); margin:0 0 18px; }
+  .bars{ display:flex; flex-direction:column; gap:16px; }
+  .bargroup .blabel{ font-size:13px; margin-bottom:7px; display:flex; justify-content:space-between; }
+  .bargroup .blabel .bname{ font-weight:600; }
+  .bargroup .blabel .bbest{ font-size:11.5px; color:var(--own); font-weight:600; }
+  .track{ display:flex; flex-direction:column; gap:5px; }
+  .bar{ height:20px; border-radius:5px; position:relative; display:flex; align-items:center; min-width:2px; transition:width .7s cubic-bezier(.2,.7,.2,1); }
+  .bar span{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:#fff; padding:0 8px; white-space:nowrap; }
+  .bar.own{ background:var(--own); }
+  .bar.rent{ background:var(--rent); }
+  .bar.new{ background:var(--new); }
+  .legend{ display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); margin-top:18px; }
+  .legend i{ display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+
+  /* breakeven viz */
+  .be-row{ margin-bottom:20px; }
+  .be-row:last-child{ margin-bottom:0; }
+  .be-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:7px; }
+  .be-top .ben{ font-weight:600; }
+  .be-top .bestat{ font-size:12px; }
+  .be-scale{ position:relative; height:30px; background:var(--paper-deep); border-radius:7px; overflow:hidden; }
+  .be-fill{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,var(--rice),var(--rent)); border-radius:7px 0 0 7px; transition:width .7s; }
+  .be-now{ position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--paddy-deep); }
+  .be-now::after{ content:attr(data-label); position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--paddy-deep); white-space:nowrap; }
+
+  /* donut */
+  .donut-wrap{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+  .donut{ flex:none; }
+  .donut-legend{ font-size:13px; }
+  .donut-legend div{ margin-bottom:8px; display:flex; align-items:center; gap:9px; }
+  .donut-legend i{ width:12px; height:12px; border-radius:3px; }
+  .donut-legend b{ font-family:"IBM Plex Mono",monospace; }
+
+  /* table */
+  .table-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:var(--shadow); }
+  table{ border-collapse:collapse; width:100%; min-width:720px; font-size:13px; }
+  th,td{ padding:12px 14px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th:first-child,td:first-child{ text-align:left; position:sticky; left:0; background:#fff; }
+  thead th{ background:var(--paper-deep); font-weight:600; color:var(--ink); font-size:12px; letter-spacing:.02em; }
+  tbody tr:last-child td{ border-bottom:none; }
+  td.num{ font-family:"IBM Plex Mono",monospace; }
+  .pick{ font-weight:600; }
+  .pick.rent{ color:var(--rent); } .pick.own{ color:var(--own); } .pick.new{ color:var(--new); }
+
+  /* recommendation cards */
+  .recs{ display:grid; gap:16px; }
+  .rec{
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--rent);
+    border-radius:12px; padding:18px 20px; box-shadow:var(--shadow);
+  }
+  .rec.own{ border-left-color:var(--own); }
+  .rec.new{ border-left-color:var(--new); }
+  .rec .rtop{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  .rec .rname{ font-family:"Gowun Batang",serif; font-weight:700; font-size:17px; }
+  .rec .rverdict{ font-size:12.5px; font-weight:600; padding:3px 11px; border-radius:999px; background:var(--paper-deep); }
+  .rec p{ margin:0; font-size:14px; color:var(--ink-soft); line-height:1.6; }
+  .rec .compare{ font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-soft); margin-top:9px; }
+
+  /* notes / explainer */
+  .note{ background:#fff; border:1px solid var(--line); border-radius:13px; padding:24px 26px; box-shadow:var(--shadow); }
+  .note h3{ font-family:"Gowun Batang",serif; font-size:18px; margin:0 0 14px; }
+  .note ol{ margin:0; padding-left:20px; }
+  .note ol li{ margin-bottom:10px; font-size:14.5px; }
+  .note .closing{ margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); font-size:14px; color:var(--ink-soft); }
+  .pill-list{ list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:10px; }
+  .pill-list li{ font-size:14px; padding-left:22px; position:relative; }
+  .pill-list li::before{ content:"›"; position:absolute; left:4px; color:var(--rent); font-weight:700; }
+
+  .disclaimer{ font-size:12px; color:var(--ink-soft); margin-top:8px; }
+  footer{ padding:40px 0 56px; color:var(--ink-soft); font-size:12.5px; }
+  footer .wrap{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  footer code{ font-family:"IBM Plex Mono",monospace; }
+  .empty-hint{ text-align:center; color:var(--ink-soft); font-size:14px; padding:30px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">벼농사 농기계 · 보유 vs 임대 vs 신규구매</p>
+    <h1>내 논에 맞는 농기계는<br><em>사는 게 나을까, 빌리는 게 나을까?</em></h1>
+    <p class="lead">재배 면적과 보유 기계 정보를 넣고 관리 상태 10문항에 답하면, 답변에 따라 수리비 가중치가 정해집니다. 이를 반영해 트랙터·이앙기·콤바인의 연간 비용을 보유·임대·신규구매 세 갈래로 비교하고, B/C와 손익분기 면적까지 한눈에 정리해 드립니다.</p>
+    <p class="scroll-hint">↓ 아래에서 값을 입력하세요</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- INPUT -->
+  <section id="input">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <div>
+        <h2>입력</h2>
+        <p class="sub">재배 면적과 보유 농기계, 관리 상태를 입력합니다.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="field">
+        <label for="area">재배 면적 <span class="hint">(마지기 · 1마지기 = 200평)</span></label>
+        <input type="number" id="area" min="0" step="1" value="30" placeholder="예: 30">
+      </div>
+
+      <div class="field" style="margin-bottom:8px;">
+        <label>보유 농기계 <span class="hint">(보유한 기계만 체크하고 정보를 입력하세요)</span></label>
+      </div>
+      <div class="machines" id="machines"></div>
+    </div>
+
+    <div style="height:24px;"></div>
+
+    <div class="sec-head" style="margin-bottom:18px;">
+      <span class="sec-num">02</span>
+      <div>
+        <h2>관리 상태 진단</h2>
+        <p class="sub">10문항에 답하면 수리비 가중치가 정해집니다 · 80점↑ 상 ×0.8 / 50점↑ 중 ×1.0 / 그 미만 하 ×1.4</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="survey" id="survey"></div>
+      <div class="runbar" style="margin-top:20px;">
+        <button class="btn btn-go" id="run">분석 실행</button>
+        <span class="score-pill" id="scorePill">관리 점수 0 / 100</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <div><h2>핵심 요약</h2><p class="sub">연간 기준 한눈에 보기</p></div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <div><h2>비용 비교</h2><p class="sub">기계별 보유 · 임대 · 신규구매 연간 비용 (막대가 짧을수록 저렴)</p></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>보유 vs 임대 vs 신규구매</h3>
+          <p class="csub">연간 비용(원) — 가장 저렴한 방식이 추천됩니다</p>
+          <div class="bars" id="costBars"></div>
+          <div class="legend">
+            <span><i style="background:var(--own)"></i>보유</span>
+            <span><i style="background:var(--rent)"></i>임대</span>
+            <span><i style="background:var(--new)"></i>신규구매</span>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>농사 수익 대비 기계 비용</h3>
+          <p class="csub">연간 기계 비용이 농사 수익에서 차지하는 비중</p>
+          <div class="donut-wrap">
+            <div class="donut" id="donut"></div>
+            <div class="donut-legend" id="donutLegend"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-num">05</span>
+        <div><h2>임대 vs 보유 손익분기 면적</h2><p class="sub">이 면적까지는 임대가, 넘으면 보유가 유리해집니다</p></div>
+      </div>
+      <div class="chart-card">
+        <div id="breakeven"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-num">06</span>
+        <div><h2>농기계별 상세</h2><p class="sub">모든 수치는 연간 기준 (원)</p></div>
+      </div>
+      <div class="table-scroll">
+        <table id="detailTable"></table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-num">07</span>
+        <div><h2>대행 매출 분석</h2><p class="sub">유지비·수리비를 메우는 데 필요한 대행 횟수와 매출 (적기 한계 반영)</p></div>
+      </div>
+      <div class="note" id="contractNote"></div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-num">08</span>
+        <div><h2>B/C 분석</h2><p class="sub">농기계 비용 대비 농사 수익</p></div>
+      </div>
+      <div class="note" id="bcNote"></div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <span class="sec-num">09</span>
+        <div><h2>최종 추천</h2><p class="sub">계속 보유 / 임대 / 신규구매 3자 비교 결과</p></div>
+      </div>
+      <div class="recs" id="recs"></div>
+    </section>
+
+    <section style="border-bottom:none;">
+      <div class="sec-head">
+        <span class="sec-num">10</span>
+        <div><h2>임대 비용이 낮게 보이는 이유</h2><p class="sub">계산 오류가 아니라 비용 구조의 결과입니다</p></div>
+      </div>
+      <div class="note">
+        <ol>
+          <li><b>연 1회만 임대.</b> 이앙기·콤바인은 모내기·수확처럼 시즌에 한 번만 임대하므로, 연 2회 쓰는 트랙터보다 임대 빈도가 적어 연간 임대비가 작습니다.</li>
+          <li><b>감가상각 부담이 없음.</b> 임대는 수천만 원짜리 기계값을 떠안지 않습니다. 보유는 구매가를 평균수명으로 나눈 감가가 매년 비용에 포함되어 차이가 큽니다.</li>
+          <li><b>시즌에 며칠만 사용.</b> '하루 임대료 × 작업일수'만큼만 지출되므로, 짧게 쓰는 기계일수록 임대가 저렴합니다.</li>
+        </ol>
+        <p class="closing">→ 짧은 기간만 쓰는 기계가 임대로 저렴하게 나오는 것은 실제 비용 구조를 반영한 결과입니다. 다만 위의 손익분기 면적을 넘는 대규모 경작에서는 보유가 더 유리해집니다.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>농기계 보유·임대 경제성 분석 · 연간 기준 추정치</span>
+    <span><code>쌀 수익 890,110원/마지기 · 농구비 34,438원/10a (KOSIS)</code></span>
+  </div>
+</footer>
+
+<script>
+/* ===================== 기준 데이터 (Python 로직 이식) ===================== */
+const RICE_INCOME_PER_MAJIGI = 890110;
+const REPAIR_COST_PER_10A = 34438;
+const MAJIGI_TO_10A = 200 * 3.305785 / 1000;   // ≈ 0.6612
+const NEW_PURCHASE_RATE = 1.1;
+const SELL_PRICE = 0;
+const NEW_REPAIR_WEIGHT = 0.8;
+const COST_RATIO_THRESHOLD = 30;
+
+const MACHINE_INFO = {
+  "트랙터":{ 하루임대료:103500, 하루작업면적:6, 연작업횟수:2, 작업가능일수:20, 대행단가:40000, 대행작업명:"논갈이", 평균수명:12, 농구비비중:0.35, 예시:["45000000","7","1200000"] },
+  "이앙기":{ 하루임대료:57500, 하루작업면적:7, 연작업횟수:1, 작업가능일수:15, 대행단가:55000, 대행작업명:"이앙 작업", 평균수명:8, 농구비비중:0.20, 예시:["28000000","4","800000"] },
+  "콤바인":{ 하루임대료:179000, 하루작업면적:9, 연작업횟수:1, 작업가능일수:15, 대행단가:80000, 대행작업명:"수확", 평균수명:10, 농구비비중:0.45, 예시:["75000000","6","1800000"] },
+};
+const NAMES = Object.keys(MACHINE_INFO);
+
+const QUESTIONS = [
+  "사용 후 몸체 세척 및 주요 부위 기름칠을 하시나요?",
+  "엔진오일, 냉각수, 부동액 상태를 주기적으로 확인하시나요?",
+  "보관 시 배터리 단자를 분리하거나 열쇠를 뽑아두시나요?",
+  "습기가 적고 햇볕이 없는 실내 전용 창고에 보관하시나요?",
+  "타이어 공기압을 높이거나 몸체를 들어 올려 보관하시나요?",
+  "보관 시 클러치나 변속 레버를 '중립' 또는 '끊음' 위치에 두시나요?",
+  "이앙기 식부 장치 등 부식이 쉬운 부위에 그리스를 바르시나요?",
+  "머플러가 식은 후 전용 덮개를 씌워 먼지를 차단하시나요?",
+  "엔진 내부 부식을 막기 위해 압축 상태로 보관하시나요?",
+  "보관 중 기계가 움직이지 않게 받침대로 고정하시나요?",
+];
+
+/* ===================== 계산 함수 (Python 이식) ===================== */
+const won = v => Math.round(v).toLocaleString("ko-KR") + "원";
+const ceil = Math.ceil;
+
+function calcFarmIncome(area){ return area * RICE_INCOME_PER_MAJIGI; }
+function calcRepairCost(name, area, weight){
+  // 10a당 농구비는 기계 전체 기준이므로, 기계별 비중(트랙터35/이앙기20/콤바인45%)으로 배분
+  const share = MACHINE_INFO[name].농구비비중;
+  return area * MAJIGI_TO_10A * REPAIR_COST_PER_10A * share * weight;
+}
+
+function calcRentalCost(name, area){
+  const info = MACHINE_INFO[name];
+  const days = ceil(area / info.하루작업면적);
+  const annual = info.하루임대료 * days * info.연작업횟수;
+  return { rent:annual, days };
+}
+function calcOwnedCost(name, machine, repair){
+  const info = MACHINE_INFO[name];
+  const dep = machine.구매가격 / info.평균수명;
+  return { total: machine.연간유지비 + repair + dep, dep };
+}
+function calcNewPurchaseCost(name, machine, area){
+  const info = MACHINE_INFO[name];
+  const newPrice = machine.구매가격 * NEW_PURCHASE_RATE;
+  const newDep = newPrice / info.평균수명;
+  const newRepair = calcRepairCost(name, area, NEW_REPAIR_WEIGHT);
+  const sellBenefit = SELL_PRICE / info.평균수명;
+  return { total: newDep + machine.연간유지비 + newRepair - sellBenefit, newPrice };
+}
+function calcBreakevenArea(name, ownedCost){
+  const info = MACHINE_INFO[name];
+  if(ownedCost <= 0) return null;
+  const perDay = info.하루임대료 * info.연작업횟수;
+  return (ownedCost / perDay) * info.하루작업면적;
+}
+function analyzeContract(name, deficit){
+  const info = MACHINE_INFO[name];
+  const perJob = info.하루작업면적 * info.대행단가;
+  const need = deficit > 0 ? ceil(deficit / perJob) : 0;
+  const maxJobs = info.작업가능일수;
+  const actual = Math.min(need, maxJobs);
+  return { need, actual, capped: need > maxJobs, sales: actual * perJob };
+}
+function recommend(name, machine, ownedCost, rentalCost, newCost, grade){
+  const info = MACHINE_INFO[name];
+  const lifeRatio = machine.사용연수 / info.평균수명;
+  const cand = { "임대":rentalCost, "신규구매":newCost };
+  const keepExcluded = lifeRatio >= 0.8 && machine.고장여부;
+  if(!keepExcluded) cand["계속 보유"] = ownedCost;
+  let best = Object.keys(cand).reduce((a,b)=> cand[a]<=cand[b] ? a : b);
+  const detail = `계속보유 ${won(ownedCost)} · 임대 ${won(rentalCost)} · 신규구매 ${won(newCost)}`;
+  let verdict, reason;
+  if(best === "계속 보유"){
+    verdict = (grade === "하") ? "계속 보유 (관리 개선)" : "계속 보유";
+    reason = (grade === "하")
+      ? "세 방식 중 계속 보유가 가장 저렴하나 관리 등급이 '하'이므로 관리 개선이 병행되어야 합니다."
+      : "세 방식 중 계속 보유가 가장 저렴합니다.";
+  } else if(best === "신규구매"){
+    verdict = "판매 후 신규구매";
+    reason = keepExcluded
+      ? `평균 수명의 ${Math.round(lifeRatio*100)}%를 사용했고 고장 상태라 계속 보유를 제외했으며, 임대보다 신규구매가 유리합니다.`
+      : "기존 기계를 처분(0원)하고 새로 구매하는 편이 장기적으로 가장 저렴합니다.";
+  } else {
+    verdict = "임대";
+    reason = keepExcluded
+      ? `수명의 ${Math.round(lifeRatio*100)}%를 사용·고장 상태라 계속 보유를 제외했으며, 임대가 가장 경제적입니다.`
+      : "임대 방식이 가장 저렴합니다.";
+  }
+  return { best, verdict, reason, detail, lifeRatio, keepExcluded };
+}
+
+/* ===================== UI 빌드 ===================== */
+const machinesEl = document.getElementById("machines");
+NAMES.forEach(name=>{
+  const ex = MACHINE_INFO[name].예시;
+  const el = document.createElement("div");
+  el.className = "mcard";
+  el.dataset.name = name;
+  el.innerHTML = `
+    <label class="toggle"><input type="checkbox" class="own-chk"> 보유함</label>
+    <h4>${name}</h4>
+    <div class="body hide">
+      <div class="mini"><label>구매 가격(원)</label><input type="number" class="f-price" placeholder="예: ${Number(ex[0]).toLocaleString()}"></div>
+      <div class="mini"><label>사용 연수(년)</label><input type="number" class="f-years" placeholder="예: ${ex[1]}"></div>
+      <div class="mini"><label>연간 유지비·상환금(원)</label><input type="number" class="f-up" placeholder="예: ${Number(ex[2]).toLocaleString()}"></div>
+      <label class="checkrow"><input type="checkbox" class="f-broken"> 현재 고장 상태</label>
+    </div>`;
+  machinesEl.appendChild(el);
+  const chk = el.querySelector(".own-chk");
+  const body = el.querySelector(".body");
+  chk.addEventListener("change", ()=>{
+    el.classList.toggle("on", chk.checked);
+    body.classList.toggle("hide", !chk.checked);
+    body.classList.toggle("show", chk.checked);
+  });
+});
+
+const surveyEl = document.getElementById("survey");
+const answers = new Array(QUESTIONS.length).fill(null);
+QUESTIONS.forEach((q,i)=>{
+  const row = document.createElement("div");
+  row.className = "q";
+  row.innerHTML = `<span class="qtext">${i+1}. ${q}</span>
+    <span class="yn" data-i="${i}">
+      <button data-v="y">예</button><button data-v="n">아니오</button>
+    </span>`;
+  surveyEl.appendChild(row);
+});
+surveyEl.addEventListener("click", e=>{
+  const btn = e.target.closest("button"); if(!btn) return;
+  const yn = btn.parentElement; const i = +yn.dataset.i;
+  answers[i] = btn.dataset.v === "y";
+  yn.querySelectorAll("button").forEach(b=>{ b.classList.remove("sel-y","sel-n"); });
+  btn.classList.add(btn.dataset.v === "y" ? "sel-y" : "sel-n");
+  updateScore();
+});
+function currentScore(){ return answers.reduce((s,a)=> s + (a===true ? 10 : 0), 0); }
+function updateScore(){
+  document.getElementById("scorePill").textContent = `관리 점수 ${currentScore()} / 100`;
+}
+
+function gradeFromScore(score){
+  if(score >= 80) return { grade:"상", weight:0.8 };
+  if(score >= 50) return { grade:"중", weight:1.0 };
+  return { grade:"하", weight:1.4 };
+}
+
+/* ===================== 분석 실행 ===================== */
+document.getElementById("run").addEventListener("click", runAnalysis);
+
+function readMachines(){
+  const machines = {};
+  document.querySelectorAll(".mcard").forEach(card=>{
+    if(!card.querySelector(".own-chk").checked) return;
+    const name = card.dataset.name;
+    machines[name] = {
+      구매가격: +card.querySelector(".f-price").value || 0,
+      사용연수: +card.querySelector(".f-years").value || 0,
+      연간유지비: +card.querySelector(".f-up").value || 0,
+      고장여부: card.querySelector(".f-broken").checked,
+    };
+  });
+  return machines;
+}
+
+function runAnalysis(){
+  const area = +document.getElementById("area").value || 0;
+  const machines = readMachines();
+  const score = currentScore();
+  const { grade, weight } = gradeFromScore(score);
+  const farmIncome = calcFarmIncome(area);
+
+  const rows = [];
+  let totalOwned = 0, totalSales = 0;
+  const recs = [];
+
+  NAMES.forEach(name=>{
+    const { rent, days } = calcRentalCost(name, area);
+    if(machines[name]){
+      const m = machines[name];
+      const repair = calcRepairCost(name, area, weight);
+      const { total:owned, dep } = calcOwnedCost(name, m, repair);
+      totalOwned += owned;
+      const { total:newCost, newPrice } = calcNewPurchaseCost(name, m, area);
+      const deficit = m.연간유지비 + repair;
+      const c = analyzeContract(name, deficit);
+      totalSales += c.sales;
+      const r = recommend(name, m, owned, rent, newCost, grade);
+      recs.push({ name, ...r });
+      rows.push({ name, owned:true, repair, up:m.연간유지비, dep, ownedCost:owned,
+        rent, newPrice, newCost, days, breakeven:calcBreakevenArea(name, owned),
+        need:c.need, actual:c.actual, capped:c.capped, sales:c.sales, best:r.best });
+    } else {
+      rows.push({ name, owned:false, repair:0, up:0, dep:0, ownedCost:0,
+        rent, newPrice:0, newCost:0, days, breakeven:null,
+        need:0, actual:0, capped:false, sales:0, best:"임대" });
+    }
+  });
+
+  const costRatio = farmIncome > 0 ? totalOwned/farmIncome*100 : 0;
+  const benefit = farmIncome;
+  const cost = totalOwned;
+  const bc = cost > 0 ? benefit/cost : null;
+  const profitable = farmIncome <= 0 ? null : costRatio <= COST_RATIO_THRESHOLD;
+
+  render({ area, score, grade, weight, farmIncome, totalOwned, totalSales,
+    rows, recs, costRatio, bc, profitable });
+}
+
+/* ===================== 렌더링 ===================== */
+function render(R){
+  const ownedRows = R.rows.filter(r=>r.owned);
+
+  // KPIs
+  const ratioTag = R.profitable === null ? `<span class="tag warn">판단 불가</span>`
+    : R.profitable ? `<span class="tag good">비용 부담 적정</span>`
+    : `<span class="tag warn">비용 부담 큰 편</span>`;
+  const bcTag = R.bc === null ? `<span class="tag warn">—</span>`
+    : R.bc > 1 ? `<span class="tag good">경제성 있음</span>`
+    : `<span class="tag bad">경제성 낮음</span>`;
+  document.getElementById("kpis").innerHTML = `
+    <div class="kpi"><p class="cap">재배 면적</p><div class="val">${R.area.toLocaleString()}<small> 마지기</small></div></div>
+    <div class="kpi"><p class="cap">관리 점수 · 등급</p><div class="val">${R.score}<small> /100 · ${R.grade}</small></div>
+      <span class="tag ${R.grade==='상'?'good':R.grade==='중'?'warn':'bad'}">수리비 ×${R.weight}</span></div>
+    <div class="kpi"><p class="cap">연간 농사 수익</p><div class="val">${(R.farmIncome/10000).toLocaleString(undefined,{maximumFractionDigits:0})}<small> 만원</small></div></div>
+    <div class="kpi accent"><p class="cap">B/C · 비용비율</p><div class="val">${R.bc===null?'—':R.bc.toFixed(2)}<small> · ${R.costRatio.toFixed(0)}%</small></div>${bcTag}</div>
+  `;
+
+  // 비용 막대
+  const maxCost = Math.max(...R.rows.map(r=>Math.max(r.ownedCost, r.rent, r.newCost)), 1);
+  document.getElementById("costBars").innerHTML = R.rows.map(r=>{
+    const bestLabel = r.owned ? `추천: ${r.best}` : "미보유 · 임대 기준";
+    const mk = (cls,val,lbl)=>{
+      if(!r.owned && cls!=="rent") return "";
+      const w = Math.max(val/maxCost*100, val>0?6:0);
+      return `<div class="bar ${cls}" style="width:${w}%"><span>${lbl} ${won(val)}</span></div>`;
+    };
+    return `<div class="bargroup">
+      <div class="blabel"><span class="bname">${r.name}</span><span class="bbest">${bestLabel}</span></div>
+      <div class="track">
+        ${mk("own", r.ownedCost, "보유")}
+        ${mk("rent", r.rent, "임대")}
+        ${mk("new", r.newCost, "신규")}
+      </div></div>`;
+  }).join("");
+
+  // 도넛 (비용 비율)
+  renderDonut(R.costRatio, R.farmIncome, R.totalOwned);
+
+  // 손익분기
+  const beEl = document.getElementById("breakeven");
+  if(ownedRows.length === 0){
+    beEl.innerHTML = `<p class="empty-hint">보유 농기계가 없어 손익분기 분석을 수행하지 않았습니다.</p>`;
+  } else {
+    const maxBe = Math.max(...ownedRows.map(r=>r.breakeven), R.area, 1);
+    beEl.innerHTML = ownedRows.map(r=>{
+      const fill = Math.min(r.breakeven/maxBe*100, 100);
+      const nowPos = Math.min(R.area/maxBe*100, 100);
+      const favor = R.area <= r.breakeven
+        ? `<span style="color:var(--rent)">현재 ${R.area}마지기 · 임대 유리</span>`
+        : `<span style="color:var(--own)">현재 ${R.area}마지기 · 보유 유리</span>`;
+      return `<div class="be-row">
+        <div class="be-top"><span class="ben">${r.name}</span><span class="bestat">${favor}</span></div>
+        <div class="be-scale">
+          <div class="be-fill" style="width:${fill}%"></div>
+          <div class="be-now" data-label="현재 ${R.area}" style="left:${nowPos}%"></div>
+        </div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">손익분기 약 <b>${Math.round(r.breakeven).toLocaleString()}</b>마지기까지 임대 유리, 그 이상 보유 유리</div>
+      </div>`;
+    }).join("") + `<p class="disclaimer">※ 면적이 커질수록 임대비는 늘지만 보유비(감가·유지비)는 거의 고정이라, 일정 면적을 넘으면 보유가 유리해집니다.</p>`;
+  }
+
+  // 상세 테이블
+  const fmt = v => Math.round(v).toLocaleString();
+  const pickClass = b => b==="임대"?"rent":b==="신규구매"?"new":"own";
+  document.getElementById("detailTable").innerHTML = `
+    <thead><tr>
+      <th>농기계</th><th>보유</th><th>수리비</th><th>유지비</th><th>감가</th>
+      <th>보유비용</th><th>임대비용</th><th>신규구매비용</th><th>손익분기(마지기)</th><th>추천</th>
+    </tr></thead>
+    <tbody>${R.rows.map(r=>`
+      <tr>
+        <td>${r.name}</td>
+        <td>${r.owned?"보유":"미보유"}</td>
+        <td class="num">${r.owned?fmt(r.repair):"-"}</td>
+        <td class="num">${r.owned?fmt(r.up):"-"}</td>
+        <td class="num">${r.owned?fmt(r.dep):"-"}</td>
+        <td class="num">${r.owned?fmt(r.ownedCost):"-"}</td>
+        <td class="num">${fmt(r.rent)}</td>
+        <td class="num">${r.owned?fmt(r.newCost):"-"}</td>
+        <td class="num">${r.breakeven?Math.round(r.breakeven).toLocaleString():"-"}</td>
+        <td class="pick ${pickClass(r.best)}">${r.best}</td>
+      </tr>`).join("")}</tbody>`;
+
+  // 대행 매출
+  const cNote = document.getElementById("contractNote");
+  if(ownedRows.length === 0){
+    cNote.innerHTML = `<p class="empty-hint">보유 농기계가 없어 대행 매출 분석을 수행하지 않았습니다.</p>`;
+  } else {
+    cNote.innerHTML = `<p style="margin:0 0 14px;font-size:13.5px;color:var(--ink-soft);">모내기·수확 등은 작업 적기가 짧아, 적기 안에서 할 수 있는 횟수까지만 대행할 수 있습니다.</p>
+      <ul class="pill-list">${ownedRows.map(r=>{
+        const info = MACHINE_INFO[r.name];
+        const tail = r.capped
+          ? `충당에 <b>${r.need}회</b> 필요하나 적기 한계로 최대 <b>${r.actual}회</b> 가능 → 연간 매출 약 <b>${won(r.sales)}</b> <span style="color:var(--danger)">(충당 부족)</span>`
+          : `충당에 <b>${r.need}회</b> 필요 → <b>${r.actual}회</b> 수행, 연간 매출 약 <b>${won(r.sales)}</b>`;
+        return `<li><b>${r.name}</b> (${info.대행작업명}, 마지기당 ${won(info.대행단가)}, 적기 ${info.작업가능일수}일): ${tail}</li>`;
+      }).join("")}</ul>`;
+  }
+
+  // B/C
+  const bcText = R.bc === null ? "비용이 0원이라 B/C 분석이 불가능합니다."
+    : R.bc > 1 ? `B/C 값은 <b>${R.bc.toFixed(2)}</b>로, 농기계 비용보다 농사 수익이 커 경제성이 있는 것으로 분석됩니다.`
+    : R.bc === 1 ? `B/C 값은 <b>1.00</b>으로 손익분기 수준입니다.`
+    : `B/C 값은 <b>${R.bc.toFixed(2)}</b>(1 이하)로, 농기계 비용이 농사 수익을 웃돌아 경제성이 낮은 것으로 분석됩니다.`;
+  let synth = "";
+  if(R.bc !== null){
+    if(R.bc > 1 && R.profitable) synth = "종합: 경제성이 있고 비용 부담도 적정한 수준입니다.";
+    else if(R.bc > 1 && R.profitable === false) synth = "종합: 농사 수익이 비용을 웃돌아 경제성은 있으나, 비용 부담 비율이 높은 편이므로 임대 등으로 비용을 줄이면 수익성이 더 좋아집니다.";
+    else if(R.bc <= 1) synth = "종합: 농기계 비용이 농사 수익에 육박/초과해 경제성이 낮습니다. 보유보다 임대 전환을 검토할 필요가 있습니다.";
+  }
+  document.getElementById("bcNote").innerHTML = `
+    <div style="display:flex;gap:30px;flex-wrap:wrap;margin-bottom:14px;">
+      <div><p style="margin:0;font-size:12.5px;color:var(--ink-soft)">총 수익 (Benefit)</p><div style="font-family:'IBM Plex Mono';font-size:20px;font-weight:600">${won(R.farmIncome)}</div><p style="margin:2px 0 0;font-size:11.5px;color:var(--ink-soft)">연간 농사 수익</p></div>
+      <div><p style="margin:0;font-size:12.5px;color:var(--ink-soft)">총 비용 (Cost)</p><div style="font-family:'IBM Plex Mono';font-size:20px;font-weight:600">${won(R.totalOwned)}</div><p style="margin:2px 0 0;font-size:11.5px;color:var(--ink-soft)">연간 기계 비용</p></div>
+    </div>
+    <p style="margin:0 0 8px;font-size:14.5px;">${bcText}</p>
+    ${synth?`<p style="margin:0;font-size:14px;color:var(--paddy);font-weight:500;">→ ${synth}</p>`:""}
+    ${R.totalSales>0?`<p class="closing">※ 대행 매출(약 ${won(R.totalSales)})은 비용 충당용 참고 금액으로, 별도 연료·인건비가 들고 목적이 비용 보전이므로 B/C 수익에는 넣지 않았습니다.</p>`:""}`;
+
+  // 추천 카드
+  const recsEl = document.getElementById("recs");
+  if(R.recs.length === 0){
+    recsEl.innerHTML = `<div class="rec"><p>보유 농기계가 없으므로 필요 시 임대 이용을 추천합니다.</p></div>`;
+  } else {
+    recsEl.innerHTML = R.recs.map(r=>{
+      const cls = r.best==="임대"?"rent":r.best==="신규구매"?"new":"own";
+      return `<div class="rec ${cls}">
+        <div class="rtop"><span class="rname">${r.name}</span><span class="rverdict">${r.verdict}</span></div>
+        <p>${r.reason}</p>
+        <p class="compare">${r.detail}</p>
+      </div>`;
+    }).join("") + `<p class="disclaimer">※ 신규구매는 기존가의 110%로 다시 사는 가정이라 통상 보유보다 비쌉니다. 노후·고장으로 계속 보유가 어려울 때의 대안으로 보세요.</p>`;
+  }
+
+  const res = document.getElementById("results");
+  res.classList.add("show");
+  res.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function renderDonut(ratio, income, cost){
+  const r = 52, c = 2*Math.PI*r;
+  const pct = Math.min(Math.max(ratio,0),100);
+  const costLen = c * pct/100;
+  document.getElementById("donut").innerHTML = `
+    <svg width="150" height="150" viewBox="0 0 150 150">
+      <circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--own)" stroke-width="20"/>
+      <circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--rent)" stroke-width="20"
+        stroke-dasharray="${costLen} ${c-costLen}" stroke-dashoffset="${c*0.25}"
+        transform="rotate(-90 75 75)" style="transition:stroke-dasharray .8s"/>
+      <text x="75" y="70" text-anchor="middle" font-family="IBM Plex Mono" font-size="22" font-weight="600" fill="var(--ink)">${ratio.toFixed(0)}%</text>
+      <text x="75" y="90" text-anchor="middle" font-family="IBM Plex Sans KR" font-size="11" fill="var(--ink-soft)">기계 비용</text>
+    </svg>`;
+  document.getElementById("donutLegend").innerHTML = `
+    <div><i style="background:var(--rent)"></i>기계 비용 <b>${won(cost)}</b></div>
+    <div><i style="background:var(--own)"></i>나머지 수익 영역 <b>${won(Math.max(income-cost,0))}</b></div>
+    <div style="margin-top:6px;font-size:12px;color:var(--ink-soft)">연간 농사 수익 ${won(income)} 기준</div>`;
+}
+
+/* 초기 점수 표시 */
+updateScore();
+</script>
+</body>
+</html>
